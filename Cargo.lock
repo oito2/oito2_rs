@@ -297,6 +297,7 @@ dependencies = [
  "gio",
  "glib",
  "objc2-app-kit",
+ "objc2-foundation",
  "oito2_foundation",
  "serde",
  "serde_json",

@@ -39,6 +39,7 @@ objc2-app-kit = { workspace = true, features = [
     "NSAccessibility",
     "objc2-core-foundation",
 ] }
+objc2-foundation = { workspace = true, features = ["std", "NSString", "NSUserDefaults"] }
 
 [dev-dependencies]
 serde_json = { workspace = true }
