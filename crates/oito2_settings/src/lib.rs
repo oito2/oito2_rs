@@ -31,7 +31,7 @@
 #![deny(missing_docs)]
 
 mod color;
-#[cfg(any(target_os = "linux", test))]
+#[cfg(target_os = "linux")]
 mod config;
 mod error;
 #[cfg(target_os = "linux")]
