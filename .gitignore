@@ -1,0 +1,14 @@
+# Build output
+/target/
+
+# Local-only references, planning and agent memory
+.references/
+.claude/
+.sync82.json
+*.local.json
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

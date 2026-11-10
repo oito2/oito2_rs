@@ -1,0 +1,28 @@
+[package]
+name = "oito2_foundation"
+description = "Platform rules shared by the OITO2 user interfaces: desktop environment detection, window button layout, window control style, decoration mode and system settings composition."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["desktop", "window", "platform", "settings", "theme"]
+categories = ["os", "gui"]
+
+[features]
+default = ["serde"]
+# JSON (de)serialization of every public type, with the field names the
+# OITO2 Tauri plugins emit.
+serde = ["dep:serde"]
+
+[dependencies]
+serde = { workspace = true, optional = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

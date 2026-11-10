@@ -1,0 +1,47 @@
+[package]
+name = "oito2_settings"
+description = "Reads and watches the desktop settings the OITO2 user interfaces follow: window button layout, accent color, high contrast and color scheme on Linux, Windows and macOS."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["desktop", "settings", "gsettings", "portal", "theme"]
+categories = ["os", "gui"]
+
+[features]
+default = ["serde"]
+# JSON (de)serialization of the settings types.
+serde = ["dep:serde", "oito2_foundation/serde"]
+# `watch`: a background watcher that reports every change of the settings.
+watch = []
+
+[dependencies]
+oito2_foundation = { workspace = true }
+serde = { workspace = true, optional = true }
+thiserror = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gio = { workspace = true }
+glib = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = ["Foundation", "UI", "UI_ViewManagement"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2-app-kit = { workspace = true, features = [
+    "std",
+    "NSColor",
+    "NSColorSpace",
+    "NSWorkspace",
+    "NSAccessibility",
+    "objc2-core-foundation",
+] }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

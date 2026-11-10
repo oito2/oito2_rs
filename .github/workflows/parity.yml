@@ -1,0 +1,41 @@
+name: Parity
+
+# Checks that the parity fixture still matches oito2_ui, the source of truth of
+# the rules oito2_foundation implements: clones oito2_ui and compares its
+# tools/parity/fixtures/foundation.json with the copy in this repository.
+# A failed run is the signal that oito2_ui moved: copy the new fixture (and
+# manifest.json), port the change and commit the new JSON.
+
+on:
+  schedule:
+    # Every Monday at 06:00 UTC.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fixture:
+    name: Fixture matches oito2_ui
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check out oito2_ui
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: oito2/oito2_ui
+          path: upstream/oito2_ui
+          persist-credentials: false
+      - name: Fixture is unchanged
+        run: |
+          if ! cmp upstream/oito2_ui/tools/parity/fixtures/foundation.json \
+                   crates/oito2_foundation/tests/fixtures/foundation.json; then
+            echo "foundation.json changed in oito2_ui: copy the new fixture and port the change." >&2
+            diff -u crates/oito2_foundation/tests/fixtures/foundation.json \
+                    upstream/oito2_ui/tools/parity/fixtures/foundation.json || true
+            exit 1
+          fi

@@ -1,0 +1,17 @@
+{
+	"flutter": "3.47.8",
+	"packages": {
+		"oito2_ui": "0.1.0",
+		"oito2_ui_themes": "0.1.0",
+		"oito2_ui_syntax": "0.1.0",
+		"oito2_ui_extras": "0.1.0"
+	},
+	"dependencies": {
+		"catppuccin_flutter": "1.0.0",
+		"flutter_lucide": "1.70.0",
+		"intl": "0.20.3",
+		"material_ui": "1.10.0",
+		"qr": "4.0.1",
+		"re_highlight": "0.0.3"
+	}
+}

@@ -1,0 +1,109 @@
+name: Release
+
+# Runs on a vX.Y.Z tag:
+#   1. checks that the workspace version equals the tag;
+#   2. publishes the crates to crates.io through trusted publishing (OIDC);
+#   3. creates a draft GitHub Release with the changelog sections of the version.
+#
+# Trusted publishing only works after the first manual `cargo publish` of each
+# crate, which registers it on crates.io; the `release` environment protects
+# the OIDC exchange.
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+# One release at a time; a release in progress is never cancelled.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Check the version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Workspace version equals the tag
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Cargo.toml says $version but the tag is $GITHUB_REF_NAME" >&2
+            exit 1
+          fi
+
+  publish:
+    name: Publish to crates.io
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install GLib development files
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libglib2.0-dev
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - id: auth
+        uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
+      # Publishes the crates in dependency order and waits for each one to be
+      # available before publishing the next.
+      - run: cargo publish --workspace --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+  release:
+    name: Draft the GitHub Release
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The notes concatenate the version's section of every crate's CHANGELOG.
+      - name: Write the release notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          {
+            echo "Crates: \`oito2_foundation = \"$version\"\` and \`oito2_settings = \"$version\"\` on crates.io."
+            echo
+            for dir in crates/*/; do
+              name=$(basename "$dir")
+              if [ ! -f "${dir}CHANGELOG.md" ]; then continue; fi
+              section=$(awk -v v="$version" '
+                $0 ~ "^## \\[" v "\\]" { found = 1; next }
+                found && /^## / { exit }
+                found { print }
+              ' "${dir}CHANGELOG.md")
+              if [ -z "$section" ]; then continue; fi
+              echo "### $name"
+              echo
+              echo "$section"
+              echo
+            done
+          } > "$RUNNER_TEMP/notes.md"
+          cat "$RUNNER_TEMP/notes.md"
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --draft --verify-tag \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file "$RUNNER_TEMP/notes.md"

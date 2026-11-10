@@ -1,0 +1,34 @@
+[workspace]
+resolver = "3"
+members = ["crates/oito2_foundation", "crates/oito2_settings"]
+
+# One version for every crate of the workspace; bumped together at each release.
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+license = "GPL-3.0-only"
+authors = ["OITO2"]
+repository = "https://github.com/oito2/oito2_rs"
+homepage = "https://github.com/oito2/oito2_rs"
+
+# One version per dependency for the whole workspace. gio and glib stay on the
+# same line as the gtk crate used by Tauri in oito2_uikit, so an application
+# that depends on both links a single copy of the GLib bindings.
+[workspace.dependencies]
+oito2_foundation = { version = "0.1.0", path = "crates/oito2_foundation", default-features = false }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+gio = "0.18"
+glib = "0.18"
+windows = "0.62"
+objc2-app-kit = { version = "0.3", default-features = false }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+panic = "deny"
+todo = "deny"
