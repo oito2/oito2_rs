@@ -49,3 +49,8 @@ pub use raw::{ConfigValues, RawSettings, SettingValue};
 pub use system_settings::SystemSettings;
 pub use window_button_layout::{WindowButton, WindowButtonLayout};
 pub use window_control_style::WindowControlStyle;
+
+/// Compiles and runs the examples of `README.md` as documentation tests.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+struct ReadmeDoctests;

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `README.md` with usage and features, the GPL-3.0 `LICENSE` in the package, and docs.rs metadata (all features; Linux, Windows and macOS targets).
 - `read_raw_settings` and `read_system_settings`, moved from `tauri-plugin-oito2-settings`, plus the re-exports of `oito2_foundation` (`foundation`, `RawSettings`, `SystemSettings`, `Platform`, `ColorScheme`).
 - Linux: GSettings through GIO and the `org.freedesktop.appearance` portal keys (`accent-color`, `contrast` and, new, `color-scheme`); `kdeglobals` `[KDE] LookAndFeelPackage` and the COSMIC `is_dark` flag in the configuration values.
 - Windows: the color scheme from the brightness of the system background color, next to the accent and high-contrast readers.

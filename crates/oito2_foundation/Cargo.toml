@@ -8,8 +8,14 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
+documentation = "https://docs.rs/oito2_foundation"
+readme = "README.md"
 keywords = ["desktop", "window", "platform", "settings", "theme"]
 categories = ["os", "gui"]
+
+[package.metadata.docs.rs]
+all-features = true
+targets = ["x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc", "aarch64-apple-darwin"]
 
 [features]
 default = ["serde"]

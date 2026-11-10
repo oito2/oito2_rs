@@ -123,3 +123,18 @@ pub fn watch(on_change: impl Fn(&RawSettings) + Send + 'static) -> Result<Settin
         ))
     }
 }
+
+/// Compiles the examples of `README.md` as documentation tests.
+#[cfg(all(doctest, feature = "watch"))]
+#[doc = include_str!("../README.md")]
+struct ReadmeDoctests;
+
+/// Compiles the examples of the quickstart page as documentation tests.
+#[cfg(all(doctest, feature = "watch"))]
+#[doc = include_str!("../../../docs/en/getting-started/quickstart.md")]
+struct QuickstartDoctests;
+
+/// Compiles the examples of the integration guide as documentation tests.
+#[cfg(all(doctest, feature = "watch"))]
+#[doc = include_str!("../../../docs/en/guides/workflows/examples.md")]
+struct ExamplesDoctests;

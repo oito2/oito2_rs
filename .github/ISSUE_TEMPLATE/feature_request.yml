@@ -1,0 +1,34 @@
+name: Feature request
+description: Suggest a new setting, desktop or API
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        New rules (a desktop, a setting, a fallback) start in [oito2_ui](https://github.com/oito2/oito2_ui), the source of truth; reader, watcher and API ideas for this repository are welcome here.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: The API or behavior you have in mind.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: crate
+    attributes:
+      label: Crate
+      options:
+        - oito2_foundation
+        - oito2_settings
+        - Both

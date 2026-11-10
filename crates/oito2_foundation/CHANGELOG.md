@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `README.md` with usage and features, the GPL-3.0 `LICENSE` in the package, and docs.rs metadata (all features; Linux, Windows and macOS targets).
 - `OperatingSystem`, `Density` and `Platform` with the ergonomics flags of `oito2_ui`.
 - `DesktopEnvironment` with `detect` from `XDG_CURRENT_DESKTOP` and `DESKTOP_SESSION`.
 - `WindowButton`, `WindowButtonLayout` (GNOME, KDE and Xfwm parsers, per-style defaults) and `WindowControlStyle::resolve`.
