@@ -48,7 +48,7 @@ pub fn read_into(raw: &mut RawSettings) {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(feature = "watch", test))]
 /// The GSettings schemas that hold watched keys, each once, in sorted order.
 pub fn watched_schemas() -> Vec<&'static str> {
     let mut schemas: Vec<&str> = GSETTINGS_KEYS.iter().map(|(schema, _)| *schema).collect();

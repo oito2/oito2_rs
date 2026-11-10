@@ -70,7 +70,7 @@ pub fn read_config(home: &Path) -> ConfigValues {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(feature = "watch", test))]
 /// The directories whose files hold settings, with the file names that matter
 /// in each, in the order of [`files::ALL`].
 pub fn watched_files(home: &Path) -> Vec<(PathBuf, Vec<String>)> {

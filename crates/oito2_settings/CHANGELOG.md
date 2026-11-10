@@ -14,4 +14,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Windows: the color scheme from the brightness of the system background color, next to the accent and high-contrast readers.
 - macOS: the color scheme from the `AppleInterfaceStyle` user default, next to the accent and "Increase contrast" readers.
 - `Error` (`Unsupported`, `Internal`) with the `{kind, message}` JSON shape of the plugins.
-- `examples/print_settings.rs`.
+- `examples/print_settings.rs`, which with the `watch` feature also prints every change.
+- `watch` and `SettingsWatcher` (feature `watch`, Linux): GSettings signals, file monitors on the configuration directories and the portal's `SettingChanged` signal on a GLib main context of the watcher's own thread, so no application main loop is needed; one callback per burst of changes (150 ms debounce), only when the settings differ; stops on drop. Other platforms return `Error::Unsupported`.

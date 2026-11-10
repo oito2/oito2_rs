@@ -14,14 +14,32 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 //! Prints what this machine's settings stores hold and the system settings
-//! composed from them:
-//! `cargo run -p oito2_settings --example print_settings`.
+//! composed from them, then, with the `watch` feature, prints the settings
+//! again after each change until interrupted:
+//! `cargo run -p oito2_settings --example print_settings --features watch`.
 
-use oito2_settings::{Platform, SystemSettings};
+use oito2_settings::{Platform, RawSettings, SystemSettings};
+
+/// Prints `raw` and the settings composed from it.
+fn print(raw: &RawSettings) {
+    println!("RawSettings:\n{raw:#?}\n");
+    let settings = SystemSettings::compose(raw, Platform::current());
+    println!("SystemSettings:\n{settings:#?}");
+}
 
 fn main() {
-    let raw = oito2_settings::read_raw_settings();
-    println!("RawSettings:\n{raw:#?}\n");
-    let settings = SystemSettings::compose(&raw, Platform::current());
-    println!("SystemSettings:\n{settings:#?}");
+    print(&oito2_settings::read_raw_settings());
+    #[cfg(feature = "watch")]
+    match oito2_settings::watch(|raw| {
+        println!("\n--- changed ---");
+        print(raw);
+    }) {
+        Ok(_watcher) => {
+            println!("\nWatching for changes; press Ctrl+C to stop.");
+            loop {
+                std::thread::park();
+            }
+        }
+        Err(error) => eprintln!("cannot watch the settings: {error}"),
+    }
 }

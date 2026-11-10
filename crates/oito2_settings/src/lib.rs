@@ -27,6 +27,9 @@
 //! Every reader is safe to call from any thread and never fails: a store that
 //! can't be read leaves its values empty, so the composition falls back to
 //! the desktop's defaults.
+//!
+//! With the `watch` feature, [`watch`] reports every change of the settings
+//! from a background thread (Linux only in this version).
 
 #![deny(missing_docs)]
 
@@ -40,6 +43,8 @@ mod linux;
 mod macos;
 #[cfg(any(target_os = "linux", test))]
 mod parsers;
+#[cfg(feature = "watch")]
+mod watcher;
 #[cfg(windows)]
 mod windows;
 
@@ -49,6 +54,8 @@ pub use oito2_foundation::{
 };
 
 pub use error::{Error, Result};
+#[cfg(feature = "watch")]
+pub use watcher::SettingsWatcher;
 
 /// Reads the settings of the running platform. Outside Linux, Windows and
 /// macOS nothing is read and every value is empty.
@@ -67,4 +74,32 @@ pub fn read_raw_settings() -> RawSettings {
 /// [`SystemSettings::compose`] for [`Platform::current`].
 pub fn read_system_settings() -> SystemSettings {
     SystemSettings::compose(&read_raw_settings(), Platform::current())
+}
+
+/// Watches the settings of the running platform and calls `on_change` with
+/// the new [`RawSettings`] after each change, from a thread of the returned
+/// [`SettingsWatcher`], until the watcher is dropped. Read the settings once
+/// with [`read_raw_settings`] for their value before the first change.
+///
+/// On Linux it watches GSettings, the configuration files and the settings
+/// portal, on a GLib main context of its own: it needs no main loop from the
+/// application and doesn't disturb one the application runs.
+///
+/// # Errors
+///
+/// [`Error::Unsupported`] outside Linux; [`Error::Internal`] when a watcher
+/// thread can't start.
+#[cfg(feature = "watch")]
+pub fn watch(on_change: impl Fn(&RawSettings) + Send + 'static) -> Result<SettingsWatcher> {
+    #[cfg(target_os = "linux")]
+    {
+        linux::watch::watch(on_change)
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = on_change;
+        Err(Error::Unsupported(
+            "watching the settings on this platform".into(),
+        ))
+    }
 }

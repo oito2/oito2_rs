@@ -18,6 +18,10 @@
 
 pub mod gsettings;
 pub mod portal;
+#[cfg(feature = "watch")]
+pub mod watch;
+
+use std::path::PathBuf;
 
 use crate::RawSettings;
 
@@ -30,12 +34,18 @@ pub fn read() -> RawSettings {
         ..Default::default()
     };
     gsettings::read_into(&mut raw);
-    if let Some(home) = crate::config::config_home(
-        std::env::var("XDG_CONFIG_HOME").ok().as_deref(),
-        std::env::var("HOME").ok().as_deref(),
-    ) {
+    if let Some(home) = config_home() {
         raw.config = crate::config::read_config(&home);
     }
     portal::read_into(&mut raw);
     raw
+}
+
+/// The configuration directory of this process, from `XDG_CONFIG_HOME` and
+/// `HOME`.
+pub fn config_home() -> Option<PathBuf> {
+    crate::config::config_home(
+        std::env::var("XDG_CONFIG_HOME").ok().as_deref(),
+        std::env::var("HOME").ok().as_deref(),
+    )
 }
