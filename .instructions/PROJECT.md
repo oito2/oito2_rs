@@ -26,6 +26,7 @@ Rules defined for this project. They take precedence over `AGENTS.md` and over t
 
 - Every hand-written `.rs` file starts with the GPL-3.0 header "Copyright (C) 2026  OITO2" (two spaces, uppercase), as in `crates/*/src/lib.rs`.
 - Toolchain 1.99.0 (`rust-toolchain.toml`), edition 2024, MSRV 1.90. Lints come from the workspace: `unsafe_code = "forbid"`, clippy `unwrap_used`, `panic` and `todo` denied; `clippy.toml` relaxes them in tests. Every public item has rustdoc (`#![deny(missing_docs)]`).
+- Exception to `unsafe_code = "forbid"`: `oito2_settings` declares its own lints with `unsafe_code = "deny"` and `clippy::undocumented_unsafe_blocks = "deny"`, and only `src/macos/watch.rs` (`#[allow(unsafe_code)]` on the module) may use `unsafe`, because the objc2 notification observer APIs are `unsafe`. Every `unsafe` block carries a `// SAFETY:` comment. Keep its `[lints]` in sync with `[workspace.lints]`.
 
 ## Versioning & Changelog
 

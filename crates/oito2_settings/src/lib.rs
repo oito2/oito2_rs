@@ -29,7 +29,7 @@
 //! the desktop's defaults.
 //!
 //! With the `watch` feature, [`watch`] reports every change of the settings
-//! from a background thread (Linux only in this version).
+//! from a background thread, on Linux, Windows and macOS.
 
 #![deny(missing_docs)]
 
@@ -85,17 +85,37 @@ pub fn read_system_settings() -> SystemSettings {
 /// portal, on a GLib main context of its own: it needs no main loop from the
 /// application and doesn't disturb one the application runs.
 ///
+/// On Windows it registers for the `ColorValuesChanged` event of `UISettings`
+/// (accent and light or dark theme) and the `HighContrastChanged` event of
+/// `AccessibilitySettings`, which the Windows Runtime raises on threads of its
+/// own.
+///
+/// On macOS it observes the `NSSystemColorsDidChangeNotification`,
+/// `AppleInterfaceThemeChangedNotification` and
+/// `NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification`
+/// notifications, which are delivered through the application's main run
+/// loop: the application must run one, as every AppKit application does.
+///
 /// # Errors
 ///
-/// [`Error::Unsupported`] outside Linux; [`Error::Internal`] when a watcher
-/// thread can't start.
+/// [`Error::Unsupported`] outside Linux, Windows and macOS;
+/// [`Error::Internal`] when a watcher thread can't start or, on Windows, when
+/// the `UISettings` events are unavailable.
 #[cfg(feature = "watch")]
 pub fn watch(on_change: impl Fn(&RawSettings) + Send + 'static) -> Result<SettingsWatcher> {
     #[cfg(target_os = "linux")]
     {
         linux::watch::watch(on_change)
     }
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(windows)]
+    {
+        windows::watch::watch(on_change)
+    }
+    #[cfg(target_os = "macos")]
+    {
+        macos::watch::watch(on_change)
+    }
+    #[cfg(not(any(target_os = "linux", windows, target_os = "macos")))]
     {
         let _ = on_change;
         Err(Error::Unsupported(

@@ -16,6 +16,9 @@
 //! Windows sources: the accent color, the high-contrast preference and the
 //! theme, through the Windows Runtime.
 
+#[cfg(feature = "watch")]
+pub mod watch;
+
 use windows::UI::ViewManagement::{AccessibilitySettings, UIColorType, UISettings};
 
 use crate::{ColorScheme, RawSettings};

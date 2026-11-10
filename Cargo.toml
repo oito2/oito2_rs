@@ -25,6 +25,8 @@ glib = "0.18"
 windows = "0.62"
 objc2-app-kit = { version = "0.3", default-features = false }
 objc2-foundation = { version = "0.3", default-features = false }
+objc2 = "0.6"
+block2 = "0.6"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

@@ -20,9 +20,12 @@
 //! pause in those events, reads the settings again and calls the callback
 //! only when they differ from the last ones it saw.
 
-// Only the Linux watcher starts a `SettingsWatcher` on other systems' builds
+// No platform watcher starts a `SettingsWatcher` on the other systems' builds
 // of this version; the emitter is still compiled and tested there.
-#![cfg_attr(not(target_os = "linux"), allow(dead_code))]
+#![cfg_attr(
+    not(any(target_os = "linux", windows, target_os = "macos")),
+    allow(dead_code)
+)]
 
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::thread::{self, JoinHandle};

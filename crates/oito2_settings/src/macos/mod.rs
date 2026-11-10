@@ -16,6 +16,10 @@
 //! macOS sources: the accent color and the "Increase contrast" preference
 //! through AppKit, and the appearance through the user defaults.
 
+#[cfg(feature = "watch")]
+#[allow(unsafe_code)]
+pub mod watch;
+
 use objc2_app_kit::{NSColor, NSColorSpace, NSWorkspace};
 use objc2_foundation::{NSString, NSUserDefaults};
 
