@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-10
+
 ### Added
 
 - `README.md` with usage and features, the GPL-3.0 `LICENSE` in the package, and docs.rs metadata (all features; Linux, Windows and macOS targets).
@@ -17,3 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Error` (`Unsupported`, `Internal`) with the `{kind, message}` JSON shape of the plugins.
 - `examples/print_settings.rs`, which with the `watch` feature also prints every change.
 - `watch` and `SettingsWatcher` (feature `watch`), on Linux, Windows and macOS. Linux: GSettings signals, file monitors on the configuration directories and the portal's `SettingChanged` signal on a GLib main context of the watcher's own thread, so no application main loop is needed; one callback per burst of changes (150 ms debounce), only when the settings differ; stops on drop. Windows: the `UISettings.ColorValuesChanged` and `AccessibilitySettings.HighContrastChanged` events. macOS: the `NSSystemColorsDidChangeNotification`, `AppleInterfaceThemeChangedNotification` (distributed) and `NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification` notifications, delivered through the application's main run loop. Other platforms return `Error::Unsupported`.
+
+[Unreleased]: https://github.com/oito2/oito2_rs/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/oito2/oito2_rs/releases/tag/v0.1.0

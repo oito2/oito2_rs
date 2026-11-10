@@ -91,11 +91,17 @@ Both crates share the workspace version (`[workspace.package] version` in `Cargo
    git push origin v0.1.0
    ```
 
-3. The **Release** workflow checks that the tag equals the workspace version, publishes the crates to crates.io through trusted publishing and drafts a GitHub Release with the changelog sections. Publish the draft after reviewing it.
+3. The **Release** workflow checks that the tag equals the workspace version, publishes to crates.io, through trusted publishing, the crates whose version isn't there yet, and drafts a GitHub Release with the changelog sections. Publish the draft after reviewing it.
 
-The very first publication of each crate is manual, because trusted publishing can only be configured for a crate that already exists on crates.io:
+Trusted publishing can only be configured for a crate that already exists on crates.io, so the first version of a new crate is published by hand, before its tag is pushed:
 
-```bash
-cargo publish -p oito2_foundation
-cargo publish -p oito2_settings
-```
+1. Create a short-lived crates.io API token with the `publish-new` and `publish-update` scopes and run `cargo login`.
+2. Publish in dependency order, from the release commit:
+
+   ```bash
+   cargo publish -p oito2_foundation --locked
+   cargo publish -p oito2_settings --locked
+   ```
+
+3. Revoke the token. On each crate's crates.io page, add a trusted publisher (*Settings → Trusted Publishing*): owner `oito2`, repository `oito2_rs`, workflow `release.yml`, environment `release`. The GitHub repository needs a `release` environment.
+4. Push the tag as in step 2 above: the workflow finds the version already published, skips it and drafts the release.

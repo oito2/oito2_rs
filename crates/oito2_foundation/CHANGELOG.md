@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-10
+
 ### Added
 
 - `README.md` with usage and features, the GPL-3.0 `LICENSE` in the package, and docs.rs metadata (all features; Linux, Windows and macOS targets).
@@ -20,3 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `raw::{RawSettings, ConfigValues, SettingValue}`, moved from `tauri-plugin-oito2-settings`, with the new optional fields `colorScheme`, `config.kdeLookAndFeelPackage` and `config.cosmicIsDark`, the `schemas` and `files` constants and `GSETTINGS_KEYS` (now with `org.gnome.desktop.interface color-scheme`).
 - `SystemSettings` with `fallback` and `compose`, the rules of `oito2_ui_settings` including the color scheme fallback per desktop.
 - Parity test against `tests/fixtures/foundation.json` and the composition cases of `oito2_uikit` and `oito2_ui_settings`.
+
+[Unreleased]: https://github.com/oito2/oito2_rs/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/oito2/oito2_rs/releases/tag/v0.1.0
