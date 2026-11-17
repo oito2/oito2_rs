@@ -28,6 +28,12 @@
 //! `DecorationMode` in kebab-case.
 
 #![deny(missing_docs)]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/oito2/oito2_rs/main/docs/img/icon-oito2_rs-256.png"
+)]
+#![doc(
+    html_favicon_url = "https://raw.githubusercontent.com/oito2/oito2_rs/main/docs/img/icon-oito2_rs-32.png"
+)]
 
 mod accent_color;
 mod color_scheme;

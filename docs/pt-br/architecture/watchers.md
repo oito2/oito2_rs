@@ -18,7 +18,7 @@ A parte da plataforma só envia `Event::Changed` por um canal `std::sync::mpsc`:
 
 | SO | Fontes |
 |---|---|
-| Linux | `changed` de `gio::Settings` para cada schema instalado de `GSETTINGS_KEYS` (cada chave observada é lida uma vez, porque o GSettings só informa chaves já lidas); `gio::FileMonitor` (`WATCH_MOVES`) em cada diretório de configuração existente, filtrado pelos nomes observados, o que pega gravações no lugar e renomeações atômicas; o sinal `SettingChanged` do portal para `org.freedesktop.appearance`. Tudo anexado a um `glib::MainContext` que pertence à thread (`with_thread_default`) e roda com um `MainLoop`. |
+| Linux | `changed` de `gio::Settings` para cada schema instalado de `GSETTINGS_KEYS` (cada chave observada é lida uma vez, porque o GSettings só informa chaves já lidas); `gio::FileMonitor` (`WATCH_MOVES`) em cada diretório de configuração existente, filtrado pelos nomes observados, o que pega gravações no lugar e renomeações atômicas; um diretório ausente é aguardado por um monitor no ancestral existente mais próximo dentro do diretório base de configuração, e quando um diretório do caminho aparece ou um monitorado é apagado, os monitores são refeitos e as configurações lidas de novo; o sinal `SettingChanged` do portal para `org.freedesktop.appearance`. Tudo anexado a um `glib::MainContext` que pertence à thread (`with_thread_default`) e roda com um `MainLoop`. |
 | Windows | Handlers de `UISettings.ColorValuesChanged` e `AccessibilitySettings.HighContrastChanged`; a thread mantém os registros vivos, e o Windows Runtime chama os handlers em threads próprias. |
 | macOS | Observadores com bloco para `NSSystemColorsDidChangeNotification` (centro padrão), `AppleInterfaceThemeChangedNotification` (centro distribuído) e `NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification` (centro do workspace). Blocos sem fila rodam na thread que posta, então as notificações chegam pelo run loop principal do aplicativo. |
 
@@ -37,5 +37,5 @@ A espera é pulada quando a thread atual é a que seria esperada, então descart
 
 ## Limites conhecidos
 
-- No Linux, diretórios de configuração criados depois do início do `watch` não são monitorados.
+- No Linux, as mudanças de arquivo só são informadas enquanto o diretório base de configuração (`$XDG_CONFIG_HOME`, ou `~/.config`) existe; se ele falta no início ou é apagado depois, o observador precisa ser criado de novo para vê-las.
 - No macOS, nada é informado sem um run loop principal em execução (um programa simples de linha de comando).

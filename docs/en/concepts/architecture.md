@@ -33,7 +33,7 @@ oito2_rs/
 │       ├── examples/          # print_settings.rs
 │       └── tests/             # read.rs
 ├── .github/workflows/         # ci.yml, parity.yml, release.yml
-└── docs/                      # en/ and pt-br/
+└── docs/                      # en/, pt-br/ and img/ (header, icon, social preview)
 ```
 
 ## Main Dependencies

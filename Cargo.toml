@@ -4,7 +4,7 @@ members = ["crates/oito2_foundation", "crates/oito2_settings"]
 
 # One version for every crate of the workspace; bumped together at each release.
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 rust-version = "1.90"
 license = "GPL-3.0-only"
@@ -16,7 +16,7 @@ homepage = "https://github.com/oito2/oito2_rs"
 # same line as the gtk crate used by Tauri in oito2_uikit, so an application
 # that depends on both links a single copy of the GLib bindings.
 [workspace.dependencies]
-oito2_foundation = { version = "0.1.0", path = "crates/oito2_foundation", default-features = false }
+oito2_foundation = { version = "0.1.1", path = "crates/oito2_foundation", default-features = false }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 thiserror = "2.0.21"

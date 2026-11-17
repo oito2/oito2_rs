@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/github-header-dark.svg">
+  <img alt="oito2_rs by OITO2 Labs — Platform rules shared by the oito2 user interfaces, in Rust" src="docs/img/github-header-light.svg" width="100%">
+</picture>
+
 # oito2_rs
 
 Rust crates with the platform rules shared by the oito2 user interfaces: desktop environment detection, window button layout and the system settings (accent color, high contrast, light or dark scheme) of Linux, Windows and macOS, read and watched live.

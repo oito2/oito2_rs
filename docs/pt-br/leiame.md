@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../img/github-header-dark.svg">
+  <img alt="oito2_rs da OITO2 Labs — Regras de plataforma compartilhadas pelas interfaces do oito2, em Rust" src="../img/github-header-light.svg" width="100%">
+</picture>
+
 # oito2_rs
 
 Crates Rust com as regras de plataforma compartilhadas pelas interfaces do oito2: detecção do ambiente de desktop, layout dos botões da janela e as configurações do sistema (cor de destaque, alto contraste, esquema claro ou escuro) no Linux, Windows e macOS, lidas e observadas ao vivo.

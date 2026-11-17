@@ -18,7 +18,7 @@ The platform part only sends `Event::Changed` over a `std::sync::mpsc` channel:
 
 | OS | Sources |
 |---|---|
-| Linux | `gio::Settings` `changed` for each installed schema of `GSETTINGS_KEYS` (each watched key is read once, since GSettings only reports keys that were read); `gio::FileMonitor` (`WATCH_MOVES`) on each existing configuration directory, filtered to the watched file names, which catches writes in place and atomic renames; the portal's `SettingChanged` signal for `org.freedesktop.appearance`. All attached to a `glib::MainContext` the thread owns (`with_thread_default`) and runs with a `MainLoop`. |
+| Linux | `gio::Settings` `changed` for each installed schema of `GSETTINGS_KEYS` (each watched key is read once, since GSettings only reports keys that were read); `gio::FileMonitor` (`WATCH_MOVES`) on each existing configuration directory, filtered to the watched file names, which catches writes in place and atomic renames; a missing directory is waited for through a monitor on its nearest existing ancestor under the configuration home, and when a directory on the way appears or a monitored one is deleted, the monitors are rebuilt and the settings read again; the portal's `SettingChanged` signal for `org.freedesktop.appearance`. All attached to a `glib::MainContext` the thread owns (`with_thread_default`) and runs with a `MainLoop`. |
 | Windows | `UISettings.ColorValuesChanged` and `AccessibilitySettings.HighContrastChanged` handlers; the thread keeps the registrations alive, and the Windows Runtime calls the handlers on its own threads. |
 | macOS | Block observers for `NSSystemColorsDidChangeNotification` (default center), `AppleInterfaceThemeChangedNotification` (distributed center) and `NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification` (workspace center). Blocks without a queue run on the posting thread, so the notifications arrive through the application's main run loop. |
 
@@ -37,5 +37,5 @@ A join is skipped when the current thread is the one to join, so dropping the wa
 
 ## Known Limits
 
-- On Linux, configuration directories created after `watch` starts are not monitored.
+- On Linux, file changes are reported only while the configuration home (`$XDG_CONFIG_HOME`, or `~/.config`) exists; when it is missing at start or deleted later, the watcher must be created again to see them.
 - On macOS, nothing is reported without a running main run loop (a plain command-line program).

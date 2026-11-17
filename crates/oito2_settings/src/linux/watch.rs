@@ -19,6 +19,8 @@
 //! this thread runs, so the watcher works with or without the application's
 //! own GLib main loop.
 
+use std::cell::RefCell;
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::mpsc::{self, Sender};
@@ -101,7 +103,7 @@ fn spawn_sources(
 /// The objects that report changes; they report while they are alive.
 struct Sources {
     _settings: Vec<gio::Settings>,
-    monitors: Vec<gio::FileMonitor>,
+    _files: Option<Rc<FileWatch>>,
     portal: Option<(gio::DBusConnection, gio::SignalSubscriptionId)>,
 }
 
@@ -117,9 +119,7 @@ impl Sources {
         };
         Self {
             _settings: watch_gsettings(&notify),
-            monitors: home
-                .map(|home| watch_files(home, &notify))
-                .unwrap_or_default(),
+            _files: home.map(|home| FileWatch::start(home, &notify)),
             portal: watch_portal(&notify),
         }
     }
@@ -127,9 +127,6 @@ impl Sources {
 
 impl Drop for Sources {
     fn drop(&mut self) {
-        for monitor in &self.monitors {
-            monitor.cancel();
-        }
         if let Some((connection, id)) = self.portal.take() {
             connection.signal_unsubscribe(id);
         }
@@ -161,35 +158,192 @@ fn watch_gsettings(notify: &Rc<dyn Fn()>) -> Vec<gio::Settings> {
     watched
 }
 
-/// Watches the directories of the configuration files under `home`, calling
-/// `notify` when one of the files is written, created, deleted or replaced.
-/// Directories that don't exist are skipped.
-fn watch_files(home: &Path, notify: &Rc<dyn Fn()>) -> Vec<gio::FileMonitor> {
-    let mut monitors = Vec::new();
-    for (directory, names) in crate::config::watched_files(home) {
-        if !directory.is_dir() {
-            continue;
+/// The file monitors of the configuration directories under `home`.
+///
+/// A configuration directory that doesn't exist yet (a desktop writes it the
+/// first time a setting leaves its default) is waited for through a monitor
+/// on its nearest existing ancestor inside `home`. When the next directory on
+/// the way appears, or a monitored directory is deleted, every monitor is
+/// rebuilt and `notify` runs, so files written together with their directory
+/// are read too.
+struct FileWatch {
+    home: PathBuf,
+    notify: Rc<dyn Fn()>,
+    monitors: RefCell<Vec<gio::FileMonitor>>,
+}
+
+/// How many times in a row `FileWatch::arm` rebuilds the monitors when the
+/// directories change while it creates them.
+const MAX_ARM_ATTEMPTS: usize = 8;
+
+impl FileWatch {
+    /// Creates the monitors for the configuration directories under `home`.
+    fn start(home: &Path, notify: &Rc<dyn Fn()>) -> Rc<Self> {
+        let watch = Rc::new(Self {
+            home: home.to_path_buf(),
+            notify: notify.clone(),
+            monitors: RefCell::new(Vec::new()),
+        });
+        watch.arm();
+        watch
+    }
+
+    /// Replaces the monitors with new ones that match the directories that
+    /// exist now. When a directory appears or disappears while the monitors
+    /// are created, they are rebuilt and `notify` runs, since that change
+    /// produced no event.
+    fn arm(self: &Rc<Self>) {
+        for _ in 0..MAX_ARM_ATTEMPTS {
+            if self.arm_once() {
+                return;
+            }
+            (self.notify)();
         }
-        let Ok(monitor) = gio::File::for_path(&directory).monitor_directory(
-            gio::FileMonitorFlags::WATCH_MOVES,
-            None::<&gio::Cancellable>,
-        ) else {
-            continue;
-        };
-        let callback = notify.clone();
-        // Matches writes in place and atomic replacements renamed onto the file.
-        monitor.connect_changed(move |_, file, other, _| {
-            let touches = |file: Option<&gio::File>| {
-                file.and_then(|file| file.basename())
-                    .is_some_and(|name| names.iter().any(|n| name.as_os_str() == n.as_str()))
-            };
-            if touches(Some(file)) || touches(other) {
-                callback();
+    }
+
+    /// Replaces the monitors once; returns `false` when the directories
+    /// changed between the existence checks and the creation of the monitors.
+    fn arm_once(self: &Rc<Self>) -> bool {
+        let weak = Rc::downgrade(self);
+        let rearm: Rc<dyn Fn()> = Rc::new(move || {
+            if let Some(watch) = weak.upgrade() {
+                watch.arm();
+                (watch.notify)();
             }
         });
-        monitors.push(monitor);
+        let mut monitors = Vec::new();
+        let mut watched = Vec::new();
+        // Existing ancestors and the names of their children on the way to
+        // missing directories.
+        let mut waiting: Vec<(PathBuf, Vec<OsString>)> = Vec::new();
+        for (directory, names) in crate::config::watched_files(&self.home) {
+            if directory.is_dir() {
+                monitors.extend(watch_names(
+                    &directory,
+                    names,
+                    self.notify.clone(),
+                    rearm.clone(),
+                ));
+                watched.push(directory);
+            } else if let Some((ancestor, child)) = nearest_existing(&self.home, &directory) {
+                match waiting.iter_mut().find(|(dir, _)| *dir == ancestor) {
+                    Some((_, children)) if children.contains(&child) => {}
+                    Some((_, children)) => children.push(child),
+                    None => waiting.push((ancestor, vec![child])),
+                }
+            }
+        }
+        for (ancestor, children) in &waiting {
+            monitors.extend(watch_children(ancestor, children.clone(), rearm.clone()));
+        }
+        for monitor in self.monitors.replace(monitors) {
+            monitor.cancel();
+        }
+        // A change made before its monitor existed produced no event.
+        watched.iter().all(|directory| directory.is_dir())
+            && waiting.iter().all(|(ancestor, children)| {
+                ancestor.is_dir() && children.iter().all(|child| !ancestor.join(child).exists())
+            })
     }
-    monitors
+}
+
+impl Drop for FileWatch {
+    fn drop(&mut self) {
+        for monitor in self.monitors.get_mut().drain(..) {
+            monitor.cancel();
+        }
+    }
+}
+
+/// Returns the nearest ancestor of the missing `directory` that exists inside
+/// `home` (or is `home`), with the name of its child on the way to
+/// `directory`; `None` when `home` doesn't exist or `directory` is outside it.
+fn nearest_existing(home: &Path, directory: &Path) -> Option<(PathBuf, OsString)> {
+    let mut child = directory;
+    while let Some(parent) = child.parent() {
+        if !parent.starts_with(home) {
+            return None;
+        }
+        if parent.is_dir() {
+            return Some((parent.to_path_buf(), child.file_name()?.to_os_string()));
+        }
+        child = parent;
+    }
+    None
+}
+
+/// Monitors `directory`, calling `notify` when a file named in `names` is
+/// written, created, deleted or replaced, and `lost` when `directory` itself
+/// is deleted or unmounted.
+fn watch_names(
+    directory: &Path,
+    names: Vec<String>,
+    notify: Rc<dyn Fn()>,
+    lost: Rc<dyn Fn()>,
+) -> Option<gio::FileMonitor> {
+    let monitor = monitor_directory(directory)?;
+    let directory = directory.to_path_buf();
+    // Matches writes in place and atomic replacements renamed onto the file.
+    monitor.connect_changed(move |_, file, other, event| {
+        if is_lost(&directory, file, event) {
+            lost();
+            return;
+        }
+        let touches = |file: Option<&gio::File>| {
+            file.and_then(|file| file.basename())
+                .is_some_and(|name| names.iter().any(|n| name.as_os_str() == n.as_str()))
+        };
+        if touches(Some(file)) || touches(other) {
+            notify();
+        }
+    });
+    Some(monitor)
+}
+
+/// Monitors `directory` and calls `changed` when an entry named in
+/// `children` is created, or moved or renamed into it, and when `directory`
+/// itself is deleted or unmounted.
+fn watch_children(
+    directory: &Path,
+    children: Vec<OsString>,
+    changed: Rc<dyn Fn()>,
+) -> Option<gio::FileMonitor> {
+    let monitor = monitor_directory(directory)?;
+    let directory = directory.to_path_buf();
+    monitor.connect_changed(move |_, file, other, event| {
+        let named = |file: Option<&gio::File>| {
+            file.and_then(|file| file.basename())
+                .is_some_and(|name| children.iter().any(|child| name.as_os_str() == child))
+        };
+        let appears = match event {
+            gio::FileMonitorEvent::Created | gio::FileMonitorEvent::MovedIn => named(Some(file)),
+            gio::FileMonitorEvent::Renamed => named(other),
+            _ => false,
+        };
+        if appears || is_lost(&directory, file, event) {
+            changed();
+        }
+    });
+    Some(monitor)
+}
+
+/// Tells whether an event of the monitor on `directory` reports that the
+/// directory itself was deleted or unmounted.
+fn is_lost(directory: &Path, file: &gio::File, event: gio::FileMonitorEvent) -> bool {
+    matches!(
+        event,
+        gio::FileMonitorEvent::Deleted | gio::FileMonitorEvent::Unmounted
+    ) && file.path().as_deref() == Some(directory)
+}
+
+/// Creates a monitor on `directory` that reports moves as moves.
+fn monitor_directory(directory: &Path) -> Option<gio::FileMonitor> {
+    gio::File::for_path(directory)
+        .monitor_directory(
+            gio::FileMonitorFlags::WATCH_MOVES,
+            None::<&gio::Cancellable>,
+        )
+        .ok()
 }
 
 /// Subscribes to the portal's `SettingChanged` signal for the appearance
@@ -282,6 +436,75 @@ mod tests {
         assert_eq!(raw.config.kwin_buttons_on_left.as_deref(), Some("IA"));
 
         drop(watcher);
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn reports_files_in_directories_created_after_starting() {
+        let home = temp_home("created");
+        let (watcher, received) = watch_home(&home);
+        let cosmic = home.join("cosmic/com.system76.CosmicTk/v1");
+
+        // A directory that doesn't matter is ignored.
+        std::fs::create_dir_all(home.join("other/v1")).unwrap();
+        assert!(received.recv_timeout(QUIET).is_err());
+
+        // The file written together with its directories is read.
+        std::fs::create_dir_all(&cosmic).unwrap();
+        std::fs::write(cosmic.join("show_minimize"), "false").unwrap();
+        let raw = received.recv_timeout(DEADLINE).unwrap();
+        assert_eq!(raw.config.cosmic_show_minimize, Some(false));
+
+        // Later writes in the new directory are watched too.
+        std::fs::write(cosmic.join("show_minimize"), "true").unwrap();
+        let raw = received.recv_timeout(DEADLINE).unwrap();
+        assert_eq!(raw.config.cosmic_show_minimize, Some(true));
+
+        drop(watcher);
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn reports_files_in_directories_deleted_and_created_again() {
+        let home = temp_home("recreated");
+        let cosmic = home.join("cosmic/com.system76.CosmicTk/v1");
+        std::fs::create_dir_all(&cosmic).unwrap();
+        std::fs::write(cosmic.join("show_minimize"), "false").unwrap();
+        let (watcher, received) = watch_home(&home);
+
+        // Deleting the directory tree reports the value that is gone.
+        std::fs::remove_dir_all(home.join("cosmic")).unwrap();
+        let raw = received.recv_timeout(DEADLINE).unwrap();
+        assert_eq!(raw.config.cosmic_show_minimize, None);
+
+        // The directory created again is watched again.
+        std::fs::create_dir_all(&cosmic).unwrap();
+        std::fs::write(cosmic.join("show_minimize"), "true").unwrap();
+        let raw = received.recv_timeout(DEADLINE).unwrap();
+        assert_eq!(raw.config.cosmic_show_minimize, Some(true));
+
+        std::fs::write(cosmic.join("show_minimize"), "false").unwrap();
+        let raw = received.recv_timeout(DEADLINE).unwrap();
+        assert_eq!(raw.config.cosmic_show_minimize, Some(false));
+
+        drop(watcher);
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn nearest_existing_stops_inside_home() {
+        let home = temp_home("nearest");
+        let missing = home.join("a/b/c");
+        assert_eq!(
+            nearest_existing(&home, &missing),
+            Some((home.clone(), OsString::from("a")))
+        );
+        std::fs::create_dir_all(home.join("a")).unwrap();
+        assert_eq!(
+            nearest_existing(&home, &missing),
+            Some((home.join("a"), OsString::from("b")))
+        );
+        assert_eq!(nearest_existing(&home.join("absent"), &missing), None);
         let _ = std::fs::remove_dir_all(home);
     }
 

@@ -20,7 +20,7 @@ Dentro do sandbox, o GSettings e os arquivos de configuração do host não fica
 
 ## Linux: uma mudança não é informada
 
-O observador monitora os diretórios de configuração que existem quando ele começa. Um diretório criado depois (por exemplo `~/.config/cosmic/com.system76.CosmicTheme.Mode/v1` numa conta nova) só é monitorado depois que o observador é criado de novo.
+Um diretório de configuração que ainda não existe (por exemplo `~/.config/cosmic/com.system76.CosmicTheme.Mode/v1` numa conta nova) é aguardado, e um diretório apagado volta a ser observado quando reaparece. O próprio diretório base de configuração (`$XDG_CONFIG_HOME`, ou `~/.config`) precisa existir quando o observador começa: se ele não existe, ou é apagado depois, as mudanças de arquivo só são informadas depois que o observador é criado de novo. As mudanças do GSettings e do portal são informadas de qualquer forma.
 
 ## macOS: o `watch` não informa nada
 

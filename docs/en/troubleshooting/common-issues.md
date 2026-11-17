@@ -20,7 +20,7 @@ Inside the sandbox, GSettings and the configuration files of the host are not vi
 
 ## Linux: a change isn't reported
 
-The watcher monitors the configuration directories that exist when it starts. A settings directory created later (for example `~/.config/cosmic/com.system76.CosmicTheme.Mode/v1` on a fresh account) is monitored only after the watcher is created again.
+A configuration directory that doesn't exist yet (for example `~/.config/cosmic/com.system76.CosmicTheme.Mode/v1` on a fresh account) is waited for, and a deleted one is watched again when it comes back. The configuration home itself (`$XDG_CONFIG_HOME`, or `~/.config`) must exist when the watcher starts: when it is missing, or deleted later, file changes are reported only after the watcher is created again. GSettings and portal changes are reported either way.
 
 ## macOS: `watch` reports nothing
 

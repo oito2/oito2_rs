@@ -1,3 +1,5 @@
+![oito2_rs by OITO2 Labs — Platform rules shared by the oito2 user interfaces, in Rust](https://raw.githubusercontent.com/oito2/oito2_rs/main/docs/img/github-header-light.png)
+
 # oito2_settings
 
 Reads and watches the desktop settings the oito2 user interfaces follow: window button layout, accent color, high contrast and light or dark scheme, on Linux, Windows and macOS.

@@ -293,7 +293,7 @@ dependencies = [
 
 [[package]]
 name = "oito2_foundation"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -302,7 +302,7 @@ dependencies = [
 
 [[package]]
 name = "oito2_settings"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "block2",
  "gio",

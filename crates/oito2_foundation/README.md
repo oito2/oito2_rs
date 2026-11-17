@@ -1,3 +1,5 @@
+![oito2_rs by OITO2 Labs — Platform rules shared by the oito2 user interfaces, in Rust](https://raw.githubusercontent.com/oito2/oito2_rs/main/docs/img/github-header-light.png)
+
 # oito2_foundation
 
 Pure platform rules shared by the oito2 user interfaces: desktop environment detection, window button layout, window control style, decoration mode and the composition of system settings. No I/O and no system dependency.

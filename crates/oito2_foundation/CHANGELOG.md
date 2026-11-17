@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-17
+
+### Changed
+
+- The README on crates.io shows the oito2_rs header, and the documentation on docs.rs its logo and favicon. No code changes; released with `oito2_settings` 0.1.1, which shares the workspace version.
+
 ## [0.1.0] - 2026-11-10
 
 ### Added
@@ -23,5 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SystemSettings` with `fallback` and `compose`, the rules of `oito2_ui_settings` including the color scheme fallback per desktop.
 - Parity test against `tests/fixtures/foundation.json` and the composition cases of `oito2_uikit` and `oito2_ui_settings`.
 
-[Unreleased]: https://github.com/oito2/oito2_rs/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/oito2/oito2_rs/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/oito2/oito2_rs/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/oito2/oito2_rs/releases/tag/v0.1.0
